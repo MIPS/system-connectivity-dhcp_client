@@ -55,6 +55,7 @@
       },
       'sources': [
         'daemon.cc',
+        'manager.cc',
       ],
     },
     {

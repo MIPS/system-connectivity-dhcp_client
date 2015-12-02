@@ -15,18 +15,37 @@
 //
 
 #include "dhcp_client/manager.h"
+#include "dhcp_client/service.h"
+
+#include "dhcp_client/message_loop_event_dispatcher.h"
 
 namespace dhcp_client {
 
-Manager::Manager() {}
+Manager::Manager()
+    : service_identifier_(0),
+      event_dispatcher_(new MessageLoopEventDispatcher()) {
+}
 
 Manager::~Manager() {}
 
-void Manager::StartService() {
+scoped_refptr<Service> Manager::StartService(
+    const brillo::VariantDictionary& configs) {
+  scoped_refptr<Service> service = new Service(this,
+                                               service_identifier_++,
+                                               event_dispatcher_.get(),
+                                               configs);
+  services_.push_back(service);
+  return service;
 }
 
-bool Manager::StopService() {
-  return true;
+bool Manager::StopService(const scoped_refptr<Service>& service) {
+  for (auto it = services_.begin(); it != services_.end(); ++it) {
+    if (*it == service) {
+      services_.erase(it);
+      return true;
+    }
+  }
+  return false;
 }
 
 }  // namespace dhcp_client

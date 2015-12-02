@@ -17,7 +17,12 @@
 #ifndef DHCP_CLIENT_MANAGER_H_
 #define DHCP_CLIENT_MANAGER_H_
 
+#include <vector>
+
 #include <base/macros.h>
+#include <brillo/variant_dictionary.h>
+
+#include "dhcp_client/event_dispatcher_interface.h"
 
 namespace dhcp_client {
 
@@ -28,12 +33,14 @@ class Manager {
   Manager();
   virtual ~Manager();
 
-  void StartService();
+  scoped_refptr<Service> StartService(const brillo::VariantDictionary& configs);
 
-  bool StopService();
+  bool StopService(const scoped_refptr<Service>& service);
 
  private:
   int service_identifier_;
+  std::unique_ptr<EventDispatcherInterface> event_dispatcher_;
+  std::vector<scoped_refptr<Service>> services_;
 
   DISALLOW_COPY_AND_ASSIGN(Manager);
 };

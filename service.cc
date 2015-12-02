@@ -14,23 +14,36 @@
 // limitations under the License.
 //
 
-#ifndef DHCP_CLIENT_EVENT_DISPATCHER_INTERFACE_H_
-#define DHCP_CLIENT_EVENT_DISPATCHER_INTERFACE_H_
-
-#include <base/callback.h>
+#include "dhcp_client/manager.h"
+#include "dhcp_client/service.h"
 
 namespace dhcp_client {
 
-// Abstract class for dispatching tasks.
-class EventDispatcherInterface {
- public:
-  virtual ~EventDispatcherInterface() {}
+Service::Service(Manager* manager,
+                 int service_identifier,
+                 EventDispatcherInterface* event_dispatcher,
+                 const brillo::VariantDictionary& configs)
+    : manager_(manager),
+      identifier_(service_identifier),
+      event_dispatcher_(event_dispatcher),
+      arp_gateway_(false),
+      unicast_arp_(false),
+      request_na_(false),
+      request_pd_(false) {
+  ParseConfigs(configs);
+}
 
-  virtual bool PostTask(const base::Closure& task) = 0;
-  virtual bool PostDelayedTask(const base::Closure& task,
-                               int64_t delay_ms) = 0;
-};
+Service::~Service() {
+}
+
+void Service::Start() {
+}
+
+void Service::Stop() {
+}
+
+void Service::ParseConfigs(const brillo::VariantDictionary& configs) {
+}
 
 }  // namespace dhcp_client
 
-#endif  // DHCP_CLIENT_EVENT_DISPATCHER_INTERFACE_H_

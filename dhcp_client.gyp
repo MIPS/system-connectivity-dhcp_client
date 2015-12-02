@@ -57,6 +57,7 @@
         'daemon.cc',
         'message_loop_event_dispatcher.cc',
         'manager.cc',
+        'service.cc',
       ],
     },
     {

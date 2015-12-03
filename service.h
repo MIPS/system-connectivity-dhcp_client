@@ -42,27 +42,32 @@ class Service : public base::RefCounted<Service> {
 
  private:
   Manager* manager_;
+  // Indentifier number of this service.
   int identifier_;
   EventDispatcherInterface* event_dispatcher_;
-
+  // Name of the network interface.
   std::string interface_name_;
+  // Type of the DHCP service.
+  // It can be IPv4 only or IPv6 only or both.
   int type_;
+  // Unique network/connection identifier,
+  // lease will persist to storage if this identifier is specified.
   std::string network_id_;
 
   // DHCP IPv4 configurations:
-  // Request hostname from server
+  // Request hostname from server.
   bool request_hostname_;
-  // ARP for default gateway
+  // ARP for default gateway.
   bool arp_gateway_;
-  // Enable unicast ARP on renew
+  // Enable unicast ARP on renew.
   bool unicast_arp_;
 
   // DHCP IPv6 configurations:
-  // Request non-temporary address
+  // Request non-temporary address.
   bool request_na_;
-  // Request prefix delegation
+  // Request prefix delegation.
   bool request_pd_;
-
+  // Parse DHCP configurations from the VariantDictionary.
   void ParseConfigs(const brillo::VariantDictionary& configs);
 
   DISALLOW_COPY_AND_ASSIGN(Service);

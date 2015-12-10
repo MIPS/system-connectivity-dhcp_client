@@ -56,6 +56,7 @@
       'sources': [
         'daemon.cc',
         'device_info.cc',
+        'dhcpv4.cc',
         'message_loop_event_dispatcher.cc',
         'manager.cc',
         'service.cc',

@@ -14,39 +14,36 @@
 // limitations under the License.
 //
 
-#ifndef DHCP_CLIENT_SERVICE_H_
-#define DHCP_CLIENT_SERVICE_H_
+#ifndef DHCP_CLIENT_DHCPV4_H_
+#define DHCP_CLIENT_DHCPV4_H_
 
 #include <string>
 
 #include <base/macros.h>
-#include <base/memory/ref_counted.h>
-#include <brillo/variant_dictionary.h>
+#include <base/strings/stringprintf.h>
 
 #include "dhcp_client/dhcp.h"
-#include "dhcp_client/dhcpv4.h"
 #include "dhcp_client/event_dispatcher_interface.h"
 
 namespace dhcp_client {
 
-class Manager;
-
-class Service : public base::RefCounted<Service> {
+class DHCPV4 : public DHCP {
  public:
-  Service(Manager* manager,
-          int service_identifier,
-          EventDispatcherInterface* event_dispatcher,
-          const brillo::VariantDictionary& configs);
+  DHCPV4(const std::string& interface_name,
+         const std::string& hardware_address,
+         unsigned int interface_index,
+         const std::string& network_id,
+         bool request_hostname,
+         bool arp_gateway,
+         bool unicast_arp,
+         EventDispatcherInterface* event_dispatcher);
 
-  virtual ~Service();
-  bool Start();
+  virtual ~DHCPV4();
+
+  void Start();
   void Stop();
 
  private:
-  Manager* manager_;
-  // Indentifier number of this service.
-  int identifier_;
-  EventDispatcherInterface* event_dispatcher_;
   // Interface parameters.
   std::string interface_name_;
   std::string hardware_address_;
@@ -56,10 +53,6 @@ class Service : public base::RefCounted<Service> {
   // lease will persist to storage if this identifier is specified.
   std::string network_id_;
 
-  // Type of the DHCP service.
-  // It can be IPv4 only or IPv6 only or both.
-  DHCP::ServiceType type_;
-
   // DHCP IPv4 configurations:
   // Request hostname from server.
   bool request_hostname_;
@@ -68,19 +61,14 @@ class Service : public base::RefCounted<Service> {
   // Enable unicast ARP on renew.
   bool unicast_arp_;
 
-  // DHCP IPv6 configurations:
-  // Request non-temporary address.
-  bool request_na_;
-  // Request prefix delegation.
-  bool request_pd_;
+  EventDispatcherInterface* event_dispatcher_;
 
-  std::unique_ptr<DHCPV4> state_machine_ipv4_;
-  // Parse DHCP configurations from the VariantDictionary.
-  void ParseConfigs(const brillo::VariantDictionary& configs);
+  // DHCP state variables
+  State state_;
 
-  DISALLOW_COPY_AND_ASSIGN(Service);
+  DISALLOW_COPY_AND_ASSIGN(DHCPV4);
 };
 
 }  // namespace dhcp_client
 
-#endif  // DHCP_CLIENT_SERVICE_H_
+#endif  // DHCP_CLIENT_DHCPV4_H_

@@ -18,6 +18,7 @@
 
 #include <string>
 
+#include "dhcp_client/device_info.h"
 #include "dhcp_client/manager.h"
 
 using std::string;
@@ -42,6 +43,7 @@ Service::Service(Manager* manager,
     : manager_(manager),
       identifier_(service_identifier),
       event_dispatcher_(event_dispatcher),
+      type_(DHCP::SERVICE_TYPE_IPV4),
       request_hostname_(false),
       arp_gateway_(false),
       unicast_arp_(false),
@@ -51,12 +53,46 @@ Service::Service(Manager* manager,
 }
 
 Service::~Service() {
+  Stop();
 }
 
-void Service::Start() {
+bool Service::Start() {
+  if (!DeviceInfo::GetInstance()->GetDeviceInfo(interface_name_,
+                                                &hardware_address_,
+                                                &interface_index_)) {
+    LOG(ERROR) << "Unable to get interface information for: "
+               << interface_name_;
+    return false;
+  }
+
+  if (type_ == DHCP::SERVICE_TYPE_IPV4 ||
+      type_ == DHCP::SERVICE_TYPE_BOTH) {
+    state_machine_ipv4_.reset(new DHCPV4(interface_name_,
+                                         hardware_address_,
+                                         interface_index_,
+                                         network_id_,
+                                         request_hostname_,
+                                         arp_gateway_,
+                                         unicast_arp_,
+                                         event_dispatcher_));
+  }
+  if (type_ == DHCP::SERVICE_TYPE_IPV6 ||
+      type_ == DHCP::SERVICE_TYPE_BOTH) {
+    // TODO(nywang): Create DHCP state machine for IPV6.
+  }
+  if (state_machine_ipv4_) {
+    state_machine_ipv4_->Start();
+  }
+  // TODO(nywang): Start DHCP state machine for IPV6.
+  return true;
 }
 
 void Service::Stop() {
+  if (state_machine_ipv4_) {
+    state_machine_ipv4_->Stop();
+    state_machine_ipv4_.reset();
+  }
+  // TODO(nywang): Stop DHCP state machine for IPV6.
 }
 
 void Service::ParseConfigs(const brillo::VariantDictionary& configs) {
@@ -66,7 +102,7 @@ void Service::ParseConfigs(const brillo::VariantDictionary& configs) {
     if (key ==  kConstantInterfaceName && value.IsTypeCompatible<string>()) {
       interface_name_ = value.Get<string>();
     } else if (key == kConstantDHCPType && value.IsTypeCompatible<int32_t>()) {
-      type_  = value.Get<int32_t>();
+      type_  = static_cast<DHCP::ServiceType>(value.Get<int32_t>());
     } else if (key == kConstantNetworkIdentifier &&
                value.IsTypeCompatible<string>()) {
       network_id_ = value.Get<string>();

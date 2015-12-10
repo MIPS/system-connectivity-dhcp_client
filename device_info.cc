@@ -24,9 +24,9 @@
 #include <string>
 
 #include <base/logging.h>
-#include <shill/net/rtnl_handler.h>
 
 using shill::Sockets;
+using shill::RTNLHandler;
 using std::unique_ptr;
 
 namespace {
@@ -39,7 +39,8 @@ base::LazyInstance<dhcp_client::DeviceInfo> g_dhcp_device_info
 namespace dhcp_client {
 
 DeviceInfo::DeviceInfo()
-    :sockets_(new Sockets()) {
+    : sockets_(new Sockets()),
+      rtnl_handler_(RTNLHandler::GetInstance()) {
 }
 
 DeviceInfo::~DeviceInfo() {}
@@ -71,14 +72,13 @@ bool DeviceInfo::GetDeviceInfo(const std::string& interface_name,
     PLOG(ERROR) << "Failed to get interface hardware address.";
     return false;
   }
-  int if_index =
-      shill::RTNLHandler::GetInstance()->GetInterfaceIndex(interface_name);
+  int if_index = rtnl_handler_->GetInterfaceIndex(interface_name);
   if (if_index == -1) {
     LOG(ERROR) << "Unable to get interface index.";
     return false;
   }
   *interface_index = if_index;
-  *mac_address = std::string(ifr.ifr_hwaddr.sa_data);
+  *mac_address = std::string(ifr.ifr_hwaddr.sa_data, IFHWADDRLEN);
 
   return true;
 }

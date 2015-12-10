@@ -71,5 +71,21 @@
       ],
     },
   ],
+  'conditions': [
+    ['USE_test == 1', {
+      'targets': [
+        {
+          'target_name': 'dhcp_client_testrunner',
+          'type': 'executable',
+          'dependencies': ['libdhcp_client'],
+          'includes': ['../../../../platform2/common-mk/common_test.gypi'],
+          'sources': [
+            'device_info_unittest.cc',
+            'testrunner.cc',
+          ],
+        },
+      ],
+    }],
+  ],
 }
 

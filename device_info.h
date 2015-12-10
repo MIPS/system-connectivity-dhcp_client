@@ -23,6 +23,7 @@
 #include <base/lazy_instance.h>
 #include <base/macros.h>
 
+#include "shill/net/rtnl_handler.h"
 #include "shill/net/sockets.h"
 
 namespace dhcp_client {
@@ -38,7 +39,10 @@ class DeviceInfo {
   DeviceInfo();
 
  private:
+  friend class DeviceInfoTest;
+
   std::unique_ptr<shill::Sockets> sockets_;
+  shill::RTNLHandler* rtnl_handler_;
   friend struct base::DefaultLazyInstanceTraits<DeviceInfo>;
 
   DISALLOW_COPY_AND_ASSIGN(DeviceInfo);

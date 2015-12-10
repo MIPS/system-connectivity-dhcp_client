@@ -28,7 +28,7 @@ namespace switches {
 
 // Don't daemon()ize; run in foreground.
 const char kForeground[] = "foreground";
-// Flag that causes apmanager to show the help message and exit.
+// Flag to show the help message.
 const char kHelp[] = "help";
 // The help message shown if help flag is passed to the program.
 const char kHelpMessage[] = "\n help message \n";

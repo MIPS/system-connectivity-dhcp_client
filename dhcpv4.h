@@ -24,6 +24,8 @@
 
 #include "dhcp_client/dhcp.h"
 #include "dhcp_client/event_dispatcher_interface.h"
+#include "shill/net/io_handler_factory_container.h"
+#include "shill/net/sockets.h"
 
 namespace dhcp_client {
 
@@ -40,7 +42,7 @@ class DHCPV4 : public DHCP {
 
   virtual ~DHCPV4();
 
-  void Start();
+  bool Start();
   void Stop();
 
  private:
@@ -62,9 +64,20 @@ class DHCPV4 : public DHCP {
   bool unicast_arp_;
 
   EventDispatcherInterface* event_dispatcher_;
+  shill::IOHandlerFactory *io_handler_factory_;
+  std::unique_ptr<shill::IOHandler> input_handler_;
 
   // DHCP state variables
   State state_;
+
+  // Socket used for sending and receiving DHCP messages.
+  int socket_;
+  // Helper class with wrapped socket relavent functions.
+  std::unique_ptr<shill::Sockets> sockets_;
+
+  bool CreateRawSocket();
+  void ParseMessage(shill::InputData* data);
+  void OnReadError(const std::string& error_msg);
 
   DISALLOW_COPY_AND_ASSIGN(DHCPV4);
 };

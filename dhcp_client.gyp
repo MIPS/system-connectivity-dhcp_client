@@ -29,6 +29,7 @@
     ],
     'cflags_cc': [
       '-Wno-missing-field-initializers', # for LAZY_INSTANCE_INITIALIZER
+      '-Wno-unused-const-variable',
     ],
     'include_dirs': [
       # We need this include dir because we include all the local code as
@@ -56,6 +57,7 @@
       'sources': [
         'daemon.cc',
         'device_info.cc',
+        'dhcp_message.cc',
         'dhcpv4.cc',
         'message_loop_event_dispatcher.cc',
         'manager.cc',

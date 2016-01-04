@@ -29,13 +29,13 @@ using shill::IOHandlerFactoryContainer;
 namespace dhcp_client {
 
 namespace {
-// UDP port numbers for DHCP
+// UDP port numbers for DHCP.
 const uint16_t kDHCPServerPort = 67;
 const uint16_t kDHCPClientPort = 68;
 
 const int kInvalidSocketDescriptor = -1;
 
-// socket filter for dhcp packet
+// Socket filter for dhcp packet.
 const sock_filter dhcp_bpf_filter[] = {
   BPF_STMT(BPF_LD + BPF_B + BPF_ABS, 23 - ETH_HLEN),
   BPF_JUMP(BPF_JMP + BPF_JEQ + BPF_K, IPPROTO_UDP, 0, 6),

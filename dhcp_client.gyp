@@ -28,6 +28,7 @@
       '-Wno-unused-parameter',  # base/lazy_instance.h, etc.
     ],
     'cflags_cc': [
+      '-fno-strict-aliasing',
       '-Wno-missing-field-initializers', # for LAZY_INSTANCE_INITIALIZER
       '-Wno-unused-const-variable',
     ],
@@ -58,6 +59,7 @@
         'daemon.cc',
         'device_info.cc',
         'dhcp_message.cc',
+        'dhcp_options_parser.cc',
         'dhcpv4.cc',
         'message_loop_event_dispatcher.cc',
         'manager.cc',
@@ -83,6 +85,7 @@
           'includes': ['../../../../platform2/common-mk/common_test.gypi'],
           'sources': [
             'device_info_unittest.cc',
+            'dhcp_options_parser_unittest.cc',
             'testrunner.cc',
           ],
         },

@@ -153,6 +153,5 @@ bool DHCPV4::CreateRawSocket() {
   return true;
 }
 
-
 }  // namespace dhcp_client
 

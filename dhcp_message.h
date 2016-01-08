@@ -54,6 +54,7 @@ class DHCPMessage {
   static bool InitFromBuffer(const unsigned char* buffer,
                              size_t length,
                              DHCPMessage* message);
+  static uint16_t ComputeChecksum(const uint8_t* data, size_t len);
 
   uint8_t message_type() const {return message_type_;}
 

@@ -67,7 +67,7 @@ class DHCPV4 : public DHCP {
   shill::IOHandlerFactory *io_handler_factory_;
   std::unique_ptr<shill::IOHandler> input_handler_;
 
-  // DHCP state variables
+  // DHCP state variables.
   State state_;
 
   // Socket used for sending and receiving DHCP messages.

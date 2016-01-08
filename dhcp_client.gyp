@@ -85,6 +85,7 @@
           'includes': ['../../../../platform2/common-mk/common_test.gypi'],
           'sources': [
             'device_info_unittest.cc',
+            'dhcp_message_unittest.cc',
             'dhcp_options_parser_unittest.cc',
             'testrunner.cc',
           ],

@@ -238,4 +238,22 @@ bool DHCPMessage::IsValid() {
   return true;
 }
 
+uint16_t DHCPMessage::ComputeChecksum(const uint8_t* data, size_t len) {
+  uint32_t sum = 0;
+
+  while (len > 1) {
+    sum += static_cast<uint32_t>(data[0]) << 8 | static_cast<uint32_t>(data[1]);
+    data += 2;
+    len -= 2;
+  }
+  if (len == 1) {
+    sum += static_cast<uint32_t>(*data) << 8;
+  }
+  sum = (sum >> 16) + (sum & 0xffff);
+  sum += (sum >> 16);
+
+  return ~static_cast<uint16_t>(sum);
+}
+
+
 }  // namespace dhcp_client

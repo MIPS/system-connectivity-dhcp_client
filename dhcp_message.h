@@ -17,37 +17,69 @@
 #ifndef DHCP_CLIENT_DHCP_MESSAGE_H_
 #define DHCP_CLIENT_DHCP_MESSAGE_H_
 
+#include <map>
+#include <memory>
 #include <string>
+#include <vector>
 
 #include <base/macros.h>
 
+#include <dhcp_client/dhcp_options_parser.h>
+
 namespace dhcp_client {
+
+static const uint8_t kDHCPMessageTypeDiscover = 1;
+static const uint8_t kDHCPMessageTypeOffer = 2;
+static const uint8_t kDHCPMessageTypeRequest = 3;
+static const uint8_t kDHCPMessageTypeDecline = 4;
+static const uint8_t kDHCPMessageTypeAck = 5;
+static const uint8_t kDHCPMessageTypeNak = 6;
+static const uint8_t kDHCPMessageTypeRelease = 7;
+static const uint8_t kDHCPMessageTypeInform = 8;
+
+typedef std::unique_ptr<DHCPOptionsParser> ParserPtr;
+
+struct ParserContext{
+  ParserPtr parser;
+  void* output;
+  ParserContext(DHCPOptionsParser* parser_ptr, void* output_ptr)
+      : parser(parser_ptr),
+        output(output_ptr) {}
+};
 
 class DHCPMessage {
  public:
-  static const uint8_t kDHCPMessageTypeDiscover = 1;
-  static const uint8_t kDHCPMessageTypeOffer = 2;
-  static const uint8_t kDHCPMessageTypeRequest = 3;
-  static const uint8_t kDHCPMessageTypeDecline = 4;
-  static const uint8_t kDHCPMessageTypeAck = 5;
-  static const uint8_t kDHCPMessageTypeNak = 6;
-  static const uint8_t kDHCPMessageTypeRelease = 7;
-  static const uint8_t kDHCPMessageTypeInform = 8;
-
   DHCPMessage();
   ~DHCPMessage();
   static bool InitFromBuffer(const unsigned char* buffer,
                              size_t length,
                              DHCPMessage* message);
-  uint32_t GetTransactionID();
-  std::string GetClientHardwareAddress();
+
+  uint8_t message_type() const {return message_type_;}
+
+  uint32_t lease_time() const {return lease_time_;}
+
+  uint32_t rebinding_time() const {return rebinding_time_;}
+
+  uint32_t renewal_time() const {return renewal_time_;}
+
+  uint32_t server_identifier() const {return server_identifier_;}
+
+  uint32_t transaction_id() const {return transaction_id_;}
+
+  uint32_t your_ip_Address() const {return your_ip_address_;}
+
+  const std::vector<uint32_t>& dns_server() const {return dns_server_;}
+
+  const std::string& client_hardware_address() const {
+    return client_hardware_address_;
+  }
 
  private:
-  bool ParseDHCPOptions(const unsigned char* options,
-                        size_t options_length);
+  bool ParseDHCPOptions(const uint8_t* options, size_t options_length);
   bool IsValid();
 
-  // Message type.
+  // Message type: request or reply.
   uint8_t opcode_;
   // Hardware address type.
   uint8_t hardware_address_type_;
@@ -80,6 +112,23 @@ class DHCPMessage {
   // Boot file name.
   std::string bootfile_;
   uint32_t cookie_;
+
+  // A map from DHCP Options number to corresponding callbacks.
+  std::map<uint8_t, ParserContext> options_map_;
+
+  // Fields for DHCP Options.
+  // Option 6: Domain Name Server Option
+  std::vector<uint32_t> dns_server_;
+  // Option 51: IP address lease time in unit of seconds.
+  uint32_t lease_time_;
+  // Option 53: DHCP message type.
+  uint8_t message_type_;
+  // Option 54: Server Identifier.
+  uint32_t server_identifier_;
+  // Option 58: Renewal time value in unit of seconds.
+  uint32_t renewal_time_;
+  // Option 59: Rebinding time value in unit of seconds.
+  uint32_t rebinding_time_;
 
   DISALLOW_COPY_AND_ASSIGN(DHCPMessage);
 };

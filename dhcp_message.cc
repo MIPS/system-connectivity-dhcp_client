@@ -21,7 +21,9 @@
 #include <netinet/in.h>
 
 #include <memory>
+#include <set>
 #include <string>
+#include <utility>
 
 #include <base/logging.h>
 
@@ -37,6 +39,16 @@ const size_t kDHCPMessageMaxLength = 548;
 const size_t kDHCPMessageMinLength = 236;
 const uint8_t kDHCPMessageBootRequest = 1;
 const uint8_t kDHCPMessageBootReply = 2;
+
+// Constants for DHCP options.
+const uint8_t kDHCPOptionPad = 0;
+const uint8_t kDHCPOptionDNSServer = 6;
+const uint8_t kDHCPOptionLeaseTime = 51;
+const uint8_t kDHCPOptionMessageType = 53;
+const uint8_t kDHCPOptionServerIdentifier = 54;
+const uint8_t kDHCPOptionRenewalTime = 58;
+const uint8_t kDHCPOptionRebindingTime = 59;
+const uint8_t kDHCPOptionEnd = 255;
 
 // Follow the naming in rfc2131 for this struct.
 struct __attribute__((__packed__)) RawDHCPMessage {
@@ -59,18 +71,35 @@ struct __attribute__((__packed__)) RawDHCPMessage {
 };
 }  // namespace
 
-DHCPMessage::DHCPMessage() {}
+DHCPMessage::DHCPMessage()
+    : lease_time_(0),
+      renewal_time_(0),
+      rebinding_time_(0) {
+  options_map_.insert(std::make_pair(kDHCPOptionMessageType,
+      ParserContext(new UInt8Parser(), &message_type_)));
+  options_map_.insert(std::make_pair(kDHCPOptionLeaseTime,
+      ParserContext(new UInt32Parser(), &lease_time_)));
+  options_map_.insert(std::make_pair(kDHCPOptionServerIdentifier,
+      ParserContext(new UInt32Parser(), &server_identifier_)));
+  options_map_.insert(std::make_pair(kDHCPOptionRenewalTime,
+      ParserContext(new UInt32Parser(), &renewal_time_)));
+  options_map_.insert(std::make_pair(kDHCPOptionRebindingTime,
+      ParserContext(new UInt32Parser(), &rebinding_time_)));
+  options_map_.insert(std::make_pair(kDHCPOptionDNSServer,
+      ParserContext(new UInt32ListParser(), &dns_server_)));
+}
+
 DHCPMessage::~DHCPMessage() {}
 
 bool DHCPMessage::InitFromBuffer(const unsigned char* buffer,
                                  size_t length,
                                  DHCPMessage* message) {
   if (buffer == NULL) {
-    LOG(WARNING) << "Invalid buffer address";
+    LOG(ERROR) << "Invalid buffer address";
     return false;
   }
   if (length < kDHCPMessageMinLength || length > kDHCPMessageMaxLength) {
-    LOG(WARNING) << "Invalid DHCP message length";
+    LOG(ERROR) << "Invalid DHCP message length";
     return false;
   }
   const RawDHCPMessage* raw_message
@@ -81,7 +110,7 @@ bool DHCPMessage::InitFromBuffer(const unsigned char* buffer,
   message->hardware_address_type_ = raw_message->htype;
   message->hardware_address_length_ = raw_message->hlen;
   if (message->hardware_address_length_ > kClientHardwareAddressLength) {
-    LOG(WARNING) << "Invalid hardware address length";
+    LOG(ERROR) << "Invalid hardware address length";
   }
   message->relay_hops_ = raw_message->hops;
   message->transaction_id_ = ntohl(raw_message->xid);
@@ -104,25 +133,66 @@ bool DHCPMessage::InitFromBuffer(const unsigned char* buffer,
     return false;
   }
   if (!message->ParseDHCPOptions(raw_message->options, options_length)) {
-    LOG(WARNING) << "Failed to parse DHCP options";
+    LOG(ERROR) << "Failed to parse DHCP options";
     return false;
   }
-  // TODO(nywang): A DHCP message must have option 53: DHCP Message Type.
   return true;
 }
 
-bool DHCPMessage::ParseDHCPOptions(const unsigned char* options,
+bool DHCPMessage::ParseDHCPOptions(const uint8_t* options,
                                    size_t options_length) {
-  // TODO(nywang): Read DHCP options.
-  return true;
-}
-
-uint32_t DHCPMessage::GetTransactionID() {
-  return transaction_id_;
-}
-
-std::string DHCPMessage::GetClientHardwareAddress() {
-  return client_hardware_address_;
+  // DHCP options are in TLV format.
+  // T: tag, L: length, V: value(data)
+  // RFC 1497, RFC 1533, RFC 2132
+  const uint8_t* ptr = options;
+  const uint8_t* end_ptr = options + options_length;
+  std::set<uint8_t> options_set;
+  while (ptr < end_ptr) {
+    uint8_t option_number = *ptr++;
+    int option_number_int = static_cast<int>(option_number);
+    if (option_number == kDHCPOptionPad) {
+      continue;
+    } else if (option_number == kDHCPOptionEnd) {
+      // We reach the end of the option field.
+      // A DHCP message must have option 53: DHCP Message Type.
+      if (options_set.find(kDHCPOptionMessageType) == options_set.end()) {
+        LOG(ERROR) << "Faied to find option 53: DHCP Message Type.";
+        return false;
+      }
+      return true;
+    }
+    if (ptr >= end_ptr) {
+      LOG(ERROR) << "Failed to decode dhcp options, no option length field"
+                    "for option: " << option_number_int;
+      return false;
+    }
+    uint8_t option_length = *ptr++;
+    if (ptr + option_length >= end_ptr) {
+      LOG(ERROR) << "Failed to decode dhcp options, invalid option length field"
+                    "for option: " << option_number_int;
+      return false;
+    }
+    if (options_set.find(option_number) != options_set.end()) {
+      LOG(ERROR) << "Found repeated DHCP option: " << option_number_int;
+      return false;
+    }
+    // Here we find a valid DHCP option.
+    auto it = options_map_.find(option_number);
+    if (it != options_map_.end()) {
+      ParserContext* context = &(it->second);
+      if (!context->parser->GetOption(ptr, option_length, context->output)) {
+        return false;
+      }
+      options_set.insert(option_number);
+    } else {
+      DLOG(INFO) << "Ignore DHCP option: " << option_number_int;
+    }
+    // Move to next tag.
+    ptr += option_length;
+  }
+  // Reach the end of message without seeing kDHCPOptionEnd.
+  LOG(ERROR) << "Broken DHCP options without END tag.";
+  return false;
 }
 
 bool DHCPMessage::IsValid() {

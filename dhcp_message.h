@@ -23,9 +23,9 @@
 #include <vector>
 
 #include <base/macros.h>
-
-#include <dhcp_client/dhcp_options_parser.h>
 #include <shill/net/byte_string.h>
+
+#include "dhcp_client/dhcp_options_parser.h"
 
 namespace dhcp_client {
 

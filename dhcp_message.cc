@@ -27,6 +27,8 @@
 
 #include <base/logging.h>
 
+#include "dhcp_client/dhcp_options.h"
+
 using shill::ByteString;
 
 namespace dhcp_client {
@@ -35,22 +37,11 @@ namespace {
 const int kClientHardwareAddressLength = 16;
 const int kServerNameLength = 64;
 const int kBootFileLength = 128;
-const int kDHCPOptionLength = 312;
 const uint32_t kMagicCookie = 0x63825363;
 const size_t kDHCPMessageMaxLength = 548;
 const size_t kDHCPMessageMinLength = 236;
 const uint8_t kDHCPMessageBootRequest = 1;
 const uint8_t kDHCPMessageBootReply = 2;
-
-// Constants for DHCP options.
-const uint8_t kDHCPOptionPad = 0;
-const uint8_t kDHCPOptionDNSServer = 6;
-const uint8_t kDHCPOptionLeaseTime = 51;
-const uint8_t kDHCPOptionMessageType = 53;
-const uint8_t kDHCPOptionServerIdentifier = 54;
-const uint8_t kDHCPOptionRenewalTime = 58;
-const uint8_t kDHCPOptionRebindingTime = 59;
-const uint8_t kDHCPOptionEnd = 255;
 
 // Follow the naming in rfc2131 for this struct.
 struct __attribute__((__packed__)) RawDHCPMessage {
@@ -150,11 +141,11 @@ bool DHCPMessage::ParseDHCPOptions(const uint8_t* options,
   const uint8_t* end_ptr = options + options_length;
   std::set<uint8_t> options_set;
   while (ptr < end_ptr) {
-    uint8_t option_number = *ptr++;
-    int option_number_int = static_cast<int>(option_number);
-    if (option_number == kDHCPOptionPad) {
+    uint8_t option_code = *ptr++;
+    int option_code_int = static_cast<int>(option_code);
+    if (option_code == kDHCPOptionPad) {
       continue;
-    } else if (option_number == kDHCPOptionEnd) {
+    } else if (option_code == kDHCPOptionEnd) {
       // We reach the end of the option field.
       // A DHCP message must have option 53: DHCP Message Type.
       if (options_set.find(kDHCPOptionMessageType) == options_set.end()) {
@@ -165,29 +156,29 @@ bool DHCPMessage::ParseDHCPOptions(const uint8_t* options,
     }
     if (ptr >= end_ptr) {
       LOG(ERROR) << "Failed to decode dhcp options, no option length field"
-                    "for option: " << option_number_int;
+                    "for option: " << option_code_int;
       return false;
     }
     uint8_t option_length = *ptr++;
     if (ptr + option_length >= end_ptr) {
       LOG(ERROR) << "Failed to decode dhcp options, invalid option length field"
-                    "for option: " << option_number_int;
+                    "for option: " << option_code_int;
       return false;
     }
-    if (options_set.find(option_number) != options_set.end()) {
-      LOG(ERROR) << "Found repeated DHCP option: " << option_number_int;
+    if (options_set.find(option_code) != options_set.end()) {
+      LOG(ERROR) << "Found repeated DHCP option: " << option_code_int;
       return false;
     }
     // Here we find a valid DHCP option.
-    auto it = options_map_.find(option_number);
+    auto it = options_map_.find(option_code);
     if (it != options_map_.end()) {
       ParserContext* context = &(it->second);
       if (!context->parser->GetOption(ptr, option_length, context->output)) {
         return false;
       }
-      options_set.insert(option_number);
+      options_set.insert(option_code);
     } else {
-      DLOG(INFO) << "Ignore DHCP option: " << option_number_int;
+      DLOG(INFO) << "Ignore DHCP option: " << option_code_int;
     }
     // Move to next tag.
     ptr += option_length;

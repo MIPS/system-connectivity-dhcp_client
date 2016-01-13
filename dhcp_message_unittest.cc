@@ -14,7 +14,7 @@
 // limitations under the License.
 //
 
-#include <dhcp_client/dhcp_message.h>
+#include "dhcp_client/dhcp_message.h"
 
 #include <gtest/gtest.h>
 

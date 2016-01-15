@@ -53,32 +53,48 @@ class DHCPMessage {
  public:
   DHCPMessage();
   ~DHCPMessage();
+  // Initialize the data fields from a buffer with existing DHCP message.
+  // This is used for inbound DHCP message.
   static bool InitFromBuffer(const unsigned char* buffer,
                              size_t length,
                              DHCPMessage* message);
+  static DHCPMessage InitRequest();
   static uint16_t ComputeChecksum(const uint8_t* data, size_t len);
-
+  static uint32_t GenerateTransactionID();
+  // Initialize part of the data fields for outbound DHCP message.
+  // Serialize the message to a buffer
   bool Serialize(shill::ByteString* data);
 
-  uint8_t message_type() const {return message_type_;}
+  // DHCP option and filed setters
+  void SetClientHardwareAddress(
+      const shill::ByteString& client_hardware_address);
+  void SetClientIdentifier(const shill::ByteString& client_identifier);
+  void SetClientIPAddress(uint32_t client_ip_address);
+  void SetLeaseTime(uint32_t lease_time);
+  void SetMessageType(uint8_t message_type);
+  void SetServerIdentifier(uint32_t server_identifier);
+  void SetTransactionID(uint32_t transaction_id);
 
-  uint32_t lease_time() const {return lease_time_;}
-
-  uint32_t rebinding_time() const {return rebinding_time_;}
-
-  uint32_t renewal_time() const {return renewal_time_;}
-
-  uint32_t server_identifier() const {return server_identifier_;}
-
-  uint32_t transaction_id() const {return transaction_id_;}
-
-  uint32_t your_ip_address() const {return your_ip_address_;}
-
-  const std::vector<uint32_t>& dns_server() const {return dns_server_;}
-
+  // DHCP option and filed getters
   const shill::ByteString& client_hardware_address() const {
     return client_hardware_address_;
   }
+  const shill::ByteString& client_identifier() const {
+    return client_identifier_;
+  }
+  uint32_t client_ip_address() const { return client_ip_address_; }
+  std::string domain_name() const { return domain_name_; }
+
+  uint32_t lease_time() const { return lease_time_; }
+  uint8_t message_type() const { return message_type_; }
+  uint32_t rebinding_time() const { return rebinding_time_; }
+  uint32_t renewal_time() const { return renewal_time_; }
+  const std::vector<uint32_t>& router() const { return router_; }
+  uint32_t server_identifier() const { return server_identifier_; }
+  uint32_t subnet_mask() const { return subnet_mask_; }
+  uint32_t transaction_id() const { return transaction_id_; }
+  uint32_t your_ip_address() const { return your_ip_address_; }
+  const std::vector<uint32_t>& dns_server() const { return dns_server_; }
 
  private:
   bool ParseDHCPOptions(const uint8_t* options, size_t options_length);
@@ -123,8 +139,14 @@ class DHCPMessage {
   std::map<uint8_t, ParserContext> options_map_;
 
   // Fields for DHCP Options.
-  // Option 6: Domain Name Server Option
+  // Option 1: Subnet Mask.
+  uint32_t subnet_mask_;
+  // Option 3: Router(Default Gateway).
+  std::vector<uint32_t> router_;
+  // Option 6: Domain Name Server.
   std::vector<uint32_t> dns_server_;
+  // Option 15: Domain Name.
+  std::string domain_name_;
   // Option 51: IP address lease time in unit of seconds.
   uint32_t lease_time_;
   // Option 53: DHCP message type.
@@ -135,6 +157,8 @@ class DHCPMessage {
   uint32_t renewal_time_;
   // Option 59: Rebinding time value in unit of seconds.
   uint32_t rebinding_time_;
+  // Option 61: Client identifier.
+  shill::ByteString client_identifier_;
 
   DISALLOW_COPY_AND_ASSIGN(DHCPMessage);
 };

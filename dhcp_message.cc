@@ -75,6 +75,8 @@ DHCPMessage::DHCPMessage()
       ParserContext(new UInt8Parser(), &message_type_)));
   options_map_.insert(std::make_pair(kDHCPOptionLeaseTime,
       ParserContext(new UInt32Parser(), &lease_time_)));
+  options_map_.insert(std::make_pair(kDHCPOptionSubnetMask,
+      ParserContext(new UInt32Parser(), &subnet_mask_)));
   options_map_.insert(std::make_pair(kDHCPOptionServerIdentifier,
       ParserContext(new UInt32Parser(), &server_identifier_)));
   options_map_.insert(std::make_pair(kDHCPOptionRenewalTime,
@@ -83,6 +85,10 @@ DHCPMessage::DHCPMessage()
       ParserContext(new UInt32Parser(), &rebinding_time_)));
   options_map_.insert(std::make_pair(kDHCPOptionDNSServer,
       ParserContext(new UInt32ListParser(), &dns_server_)));
+  options_map_.insert(std::make_pair(kDHCPOptionRouter,
+      ParserContext(new UInt32ListParser(), &router_)));
+  options_map_.insert(std::make_pair(kDHCPOptionDomainName,
+      ParserContext(new StringParser(), &domain_name_)));
 }
 
 DHCPMessage::~DHCPMessage() {}
@@ -343,5 +349,62 @@ uint16_t DHCPMessage::ComputeChecksum(const uint8_t* data, size_t len) {
   return ~static_cast<uint16_t>(sum);
 }
 
+uint32_t DHCPMessage::GenerateTransactionID() {
+  // TODO(nywang): use arc4 random number for better security.
+  srand(time(NULL));
+  return rand() % UINT32_MAX;
+}
+
+void DHCPMessage::SetClientIdentifier(
+    const ByteString& client_identifier) {
+  client_identifier_ = client_identifier;
+}
+
+void DHCPMessage::SetClientIPAddress(uint32_t client_ip_address) {
+  client_ip_address_ = client_ip_address;
+}
+
+void DHCPMessage::SetClientHardwareAddress(
+    const ByteString& client_hardware_address) {
+  client_hardware_address_ = client_hardware_address;
+}
+
+void DHCPMessage::SetLeaseTime(uint32_t lease_time) {
+  lease_time_ = lease_time;
+}
+
+void DHCPMessage::SetMessageType(uint8_t message_type) {
+  message_type_ = message_type;
+}
+
+void DHCPMessage::SetServerIdentifier(uint32_t server_identifier) {
+  server_identifier_ = server_identifier;
+}
+
+void DHCPMessage::SetTransactionID(uint32_t transaction_id) {
+  transaction_id_ = transaction_id;
+}
+
+DHCPMessage DHCPMessage::InitRequest() {
+  DHCPMessage msg;
+  msg.opcode_ = kDHCPMessageBootRequest;
+  msg.hardware_address_type_ = ARPHRD_ETHER;
+  msg.hardware_address_length_ = IFHWADDRLEN;
+  msg.relay_hops_ = 0;
+  // Seconds since DHCP process started.
+  // 0 is also valid according to RFC 2131.
+  msg.seconds_ = 0;
+  // Only firewire (IEEE 1394) and InfiniBand interfaces
+  // require broadcast flag.
+  msg.flags_ =  0;
+  // Should be zero in client's messages.
+  msg.your_ip_address_ = 0;
+  // Should be zero in client's messages.
+  msg.next_server_ip_address_ = 0;
+  // Should be zero in client's messages.
+  msg.agent_ip_address_ = 0;
+  msg.cookie_ = kMagicCookie;
+  return msg;
+}
 
 }  // namespace dhcp_client

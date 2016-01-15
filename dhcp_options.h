@@ -20,12 +20,16 @@
 namespace dhcp_client {
 // Constants for DHCP options.
 const uint8_t kDHCPOptionPad = 0;
+const uint8_t kDHCPOptionSubnetMask = 1;
+const uint8_t kDHCPOptionRouter = 3;
 const uint8_t kDHCPOptionDNSServer = 6;
+const uint8_t kDHCPOptionDomainName = 15;
 const uint8_t kDHCPOptionLeaseTime = 51;
 const uint8_t kDHCPOptionMessageType = 53;
 const uint8_t kDHCPOptionServerIdentifier = 54;
 const uint8_t kDHCPOptionRenewalTime = 58;
 const uint8_t kDHCPOptionRebindingTime = 59;
+const uint8_t kDHCPOptionClientIdentifier = 61;
 const uint8_t kDHCPOptionEnd = 255;
 
 const int kDHCPOptionLength = 312;

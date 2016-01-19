@@ -147,22 +147,18 @@ bool DHCPMessage::ParseDHCPOptions(const uint8_t* options,
       continue;
     } else if (option_code == kDHCPOptionEnd) {
       // We reach the end of the option field.
-      // A DHCP message must have option 53: DHCP Message Type.
-      if (options_set.find(kDHCPOptionMessageType) == options_set.end()) {
-        LOG(ERROR) << "Faied to find option 53: DHCP Message Type.";
-        return false;
-      }
-      return true;
+      // Validate the options before we return.
+      return ContainsValidOptions(options_set);
     }
     if (ptr >= end_ptr) {
       LOG(ERROR) << "Failed to decode dhcp options, no option length field"
-                    "for option: " << option_code_int;
+                    " for option: " << option_code_int;
       return false;
     }
     uint8_t option_length = *ptr++;
     if (ptr + option_length >= end_ptr) {
       LOG(ERROR) << "Failed to decode dhcp options, invalid option length field"
-                    "for option: " << option_code_int;
+                    " for option: " << option_code_int;
       return false;
     }
     if (options_set.find(option_code) != options_set.end()) {
@@ -186,6 +182,33 @@ bool DHCPMessage::ParseDHCPOptions(const uint8_t* options,
   // Reach the end of message without seeing kDHCPOptionEnd.
   LOG(ERROR) << "Broken DHCP options without END tag.";
   return false;
+}
+
+bool DHCPMessage::ContainsValidOptions(const std::set<uint8_t>& options_set) {
+  // A DHCP message must contain option 53: DHCP Message Type.
+  if (options_set.find(kDHCPOptionMessageType) == options_set.end()) {
+    LOG(ERROR) << "Faied to find option 53: DHCP Message Type.";
+    return false;
+  }
+  if (message_type_ != kDHCPMessageTypeOffer &&
+      message_type_ != kDHCPMessageTypeAck &&
+      message_type_ != kDHCPMessageTypeNak) {
+    LOG(ERROR) << "Invalid DHCP Message Type: " << static_cast<int>(message_type_);
+    return false;
+  }
+  // A DHCP Offer message must contain option 51: IP Address Lease Time.
+  if (message_type_ == kDHCPMessageTypeOffer) {
+    if (options_set.find(kDHCPOptionLeaseTime) == options_set.end()) {
+      LOG(ERROR) << "Faied to find option 51: IP Address Lease Time";
+      return false;
+    }
+  }
+  // A message from DHCP server must contain option 54: Server Identifier.
+  if (options_set.find(kDHCPOptionServerIdentifier) == options_set.end()) {
+    LOG(ERROR) << "Faied to find option 54: Server Identifier.";
+    return false;
+  }
+  return true;
 }
 
 bool DHCPMessage::IsValid() {

@@ -19,6 +19,7 @@
 
 #include <map>
 #include <memory>
+#include <set>
 #include <string>
 #include <vector>
 
@@ -69,7 +70,7 @@ class DHCPMessage {
 
   uint32_t transaction_id() const {return transaction_id_;}
 
-  uint32_t your_ip_Address() const {return your_ip_address_;}
+  uint32_t your_ip_address() const {return your_ip_address_;}
 
   const std::vector<uint32_t>& dns_server() const {return dns_server_;}
 
@@ -80,6 +81,7 @@ class DHCPMessage {
  private:
   bool ParseDHCPOptions(const uint8_t* options, size_t options_length);
   bool IsValid();
+  bool ContainsValidOptions(const std::set<uint8_t>& options_set);
 
   // Message type: request or reply.
   uint8_t opcode_;

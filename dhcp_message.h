@@ -25,6 +25,7 @@
 #include <base/macros.h>
 
 #include <dhcp_client/dhcp_options_parser.h>
+#include <shill/net/byte_string.h>
 
 namespace dhcp_client {
 
@@ -72,7 +73,7 @@ class DHCPMessage {
 
   const std::vector<uint32_t>& dns_server() const {return dns_server_;}
 
-  const std::string& client_hardware_address() const {
+  const shill::ByteString& client_hardware_address() const {
     return client_hardware_address_;
   }
 
@@ -107,7 +108,7 @@ class DHCPMessage {
   // It should be zero in client's messages.
   uint32_t agent_ip_address_;
   // Client's hardware address.
-  std::string client_hardware_address_;
+  shill::ByteString client_hardware_address_;
   // Server host name.
   std::string servername_;
   // Boot file name.

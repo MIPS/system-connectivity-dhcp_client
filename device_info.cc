@@ -25,6 +25,7 @@
 
 #include <base/logging.h>
 
+using shill::ByteString;
 using shill::Sockets;
 using shill::RTNLHandler;
 using std::unique_ptr;
@@ -50,7 +51,7 @@ DeviceInfo* DeviceInfo::GetInstance() {
 }
 
 bool DeviceInfo::GetDeviceInfo(const std::string& interface_name,
-                               std::string* mac_address,
+                               ByteString* mac_address,
                                unsigned int* interface_index ) {
   struct ifreq ifr;
   size_t if_name_len = interface_name.size();
@@ -78,7 +79,7 @@ bool DeviceInfo::GetDeviceInfo(const std::string& interface_name,
     return false;
   }
   *interface_index = if_index;
-  *mac_address = std::string(ifr.ifr_hwaddr.sa_data, IFHWADDRLEN);
+  *mac_address = ByteString(ifr.ifr_hwaddr.sa_data, IFHWADDRLEN);
 
   return true;
 }

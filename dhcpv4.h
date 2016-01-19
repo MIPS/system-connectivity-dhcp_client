@@ -24,6 +24,7 @@
 
 #include "dhcp_client/dhcp.h"
 #include "dhcp_client/event_dispatcher_interface.h"
+#include "shill/net/byte_string.h"
 #include "shill/net/io_handler_factory_container.h"
 #include "shill/net/sockets.h"
 
@@ -32,7 +33,7 @@ namespace dhcp_client {
 class DHCPV4 : public DHCP {
  public:
   DHCPV4(const std::string& interface_name,
-         const std::string& hardware_address,
+         const shill::ByteString& hardware_address,
          unsigned int interface_index,
          const std::string& network_id,
          bool request_hostname,
@@ -48,7 +49,7 @@ class DHCPV4 : public DHCP {
  private:
   // Interface parameters.
   std::string interface_name_;
-  std::string hardware_address_;
+  shill::ByteString hardware_address_;
   unsigned int interface_index_;
 
   // Unique network/connection identifier,

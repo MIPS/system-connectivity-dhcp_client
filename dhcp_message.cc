@@ -27,6 +27,8 @@
 
 #include <base/logging.h>
 
+using shill::ByteString;
+
 namespace dhcp_client {
 
 namespace {
@@ -121,9 +123,9 @@ bool DHCPMessage::InitFromBuffer(const unsigned char* buffer,
   message->next_server_ip_address_ = ntohl(raw_message->siaddr);
   message->agent_ip_address_ = ntohl(raw_message->giaddr);
   message->cookie_ = ntohl(raw_message->cookie);
-  message->client_hardware_address_
-      .assign(reinterpret_cast<const char*>(raw_message->chaddr),
-              message->hardware_address_length_);
+  message->client_hardware_address_ = ByteString(
+      reinterpret_cast<const char*>(raw_message->chaddr),
+      message->hardware_address_length_);
   message->servername_.assign(reinterpret_cast<const char*>(raw_message->sname),
                               kServerNameLength);
   message->bootfile_.assign(reinterpret_cast<const char*>(raw_message->file),

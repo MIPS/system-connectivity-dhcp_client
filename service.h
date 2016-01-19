@@ -26,6 +26,7 @@
 #include "dhcp_client/dhcp.h"
 #include "dhcp_client/dhcpv4.h"
 #include "dhcp_client/event_dispatcher_interface.h"
+#include "shill/net/byte_string.h"
 
 namespace dhcp_client {
 
@@ -49,7 +50,7 @@ class Service : public base::RefCounted<Service> {
   EventDispatcherInterface* event_dispatcher_;
   // Interface parameters.
   std::string interface_name_;
-  std::string hardware_address_;
+  shill::ByteString hardware_address_;
   unsigned int interface_index_;
 
   // Unique network/connection identifier,

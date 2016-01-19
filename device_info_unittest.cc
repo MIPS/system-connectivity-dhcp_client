@@ -22,9 +22,11 @@
 #include <gmock/gmock.h>
 #include <gtest/gtest.h>
 
+#include <shill/net/byte_string.h>
 #include <shill/net/mock_sockets.h>
 #include <shill/net/mock_rtnl_handler.h>
 
+using shill::ByteString;
 using shill::MockRTNLHandler;
 using shill::MockSockets;
 using ::testing::_;
@@ -73,7 +75,7 @@ MATCHER_P(IfreqEquals, ifname, "") {
 }
 
 TEST_F(DeviceInfoTest, GetDeviceInfoSucceed) {
-  std::string mac_address;
+  ByteString mac_address;
   unsigned int interface_index;
   struct ifreq ifr;
   memcpy(ifr.ifr_hwaddr.sa_data, kFakeMacAddress, sizeof(kFakeMacAddress));
@@ -90,11 +92,11 @@ TEST_F(DeviceInfoTest, GetDeviceInfoSucceed) {
                                           &interface_index));
   EXPECT_EQ(interface_index, kFakeInterfaceIndex);
   EXPECT_THAT(kFakeMacAddress,
-              ElementsAreArray(mac_address.data(), sizeof(kFakeMacAddress)));
+              ElementsAreArray(mac_address.GetData(), sizeof(kFakeMacAddress)));
 }
 
 TEST_F(DeviceInfoTest, GetDeviceInfoNameTooLong) {
-  std::string mac_address;
+  ByteString mac_address;
   unsigned int interface_index;
   EXPECT_FALSE(device_info_->GetDeviceInfo(kFakeLongDeviceName,
                                            &mac_address,
@@ -102,7 +104,7 @@ TEST_F(DeviceInfoTest, GetDeviceInfoNameTooLong) {
 }
 
 TEST_F(DeviceInfoTest, GetDeviceInfoFailedToCreateSocket) {
-  std::string mac_address;
+  ByteString mac_address;
   unsigned int interface_index;
   EXPECT_CALL(*sockets_, Socket(AF_INET, SOCK_DGRAM, 0)).WillOnce(Return(-1));
   EXPECT_FALSE(device_info_->GetDeviceInfo(kFakeDeviceName,
@@ -111,7 +113,7 @@ TEST_F(DeviceInfoTest, GetDeviceInfoFailedToCreateSocket) {
 }
 
 TEST_F(DeviceInfoTest, GetDeviceInfoFailedToGetHardwareAddr) {
-  std::string mac_address;
+  ByteString mac_address;
   unsigned int interface_index;
   EXPECT_CALL(*sockets_, Socket(AF_INET, SOCK_DGRAM, 0))
       .WillOnce(Return(kFakeFd));
@@ -122,7 +124,7 @@ TEST_F(DeviceInfoTest, GetDeviceInfoFailedToGetHardwareAddr) {
 }
 
 TEST_F(DeviceInfoTest, GetDeviceInfoFailedToGetInterfaceIndex) {
-  std::string mac_address;
+  ByteString mac_address;
   unsigned int interface_index;
   EXPECT_CALL(*sockets_, Socket(AF_INET, SOCK_DGRAM, 0))
       .WillOnce(Return(kFakeFd));

@@ -23,6 +23,7 @@
 #include <base/lazy_instance.h>
 #include <base/macros.h>
 
+#include "shill/net/byte_string.h"
 #include "shill/net/rtnl_handler.h"
 #include "shill/net/sockets.h"
 
@@ -33,7 +34,7 @@ class DeviceInfo {
   virtual ~DeviceInfo();
   static DeviceInfo* GetInstance();
   bool GetDeviceInfo(const std::string& interface_name,
-                     std::string* mac_address,
+                     shill::ByteString* mac_address,
                      unsigned int* interface_index);
  protected:
   DeviceInfo();

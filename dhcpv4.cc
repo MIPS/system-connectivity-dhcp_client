@@ -24,6 +24,7 @@
 
 using base::Bind;
 using base::Unretained;
+using shill::ByteString;
 using shill::IOHandlerFactoryContainer;
 
 namespace dhcp_client {
@@ -52,7 +53,7 @@ const int dhcp_bpf_filter_len =
 }  // namespace
 
 DHCPV4::DHCPV4(const std::string& interface_name,
-               const std::string& hardware_address,
+               const ByteString& hardware_address,
                unsigned int interface_index,
                const std::string& network_id,
                bool request_hostname,

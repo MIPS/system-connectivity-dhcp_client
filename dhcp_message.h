@@ -58,6 +58,8 @@ class DHCPMessage {
                              DHCPMessage* message);
   static uint16_t ComputeChecksum(const uint8_t* data, size_t len);
 
+  bool Serialize(shill::ByteString* data);
+
   uint8_t message_type() const {return message_type_;}
 
   uint32_t lease_time() const {return lease_time_;}

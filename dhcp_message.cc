@@ -28,6 +28,7 @@
 #include <base/logging.h>
 
 #include "dhcp_client/dhcp_options.h"
+#include "dhcp_client/dhcp_options_writer.h"
 
 using shill::ByteString;
 
@@ -66,6 +67,8 @@ struct __attribute__((__packed__)) RawDHCPMessage {
 
 DHCPMessage::DHCPMessage()
     : lease_time_(0),
+      message_type_(0),
+      server_identifier_(0),
       renewal_time_(0),
       rebinding_time_(0) {
   options_map_.insert(std::make_pair(kDHCPOptionMessageType,
@@ -250,6 +253,74 @@ bool DHCPMessage::IsValid() {
   // We do not use the bootfile field.
   if (cookie_ != kMagicCookie) {
     LOG(ERROR) << "DHCP message cookie does not match";
+    return false;
+  }
+  return true;
+}
+
+bool DHCPMessage::Serialize(ByteString* data) {
+  RawDHCPMessage raw_message;
+  raw_message.op = opcode_;
+  raw_message.htype = hardware_address_type_;
+  raw_message.hlen = hardware_address_length_;
+  raw_message.hops = relay_hops_;
+  raw_message.xid = htonl(transaction_id_);
+  raw_message.secs = htons(seconds_);
+  raw_message.flags = htons(flags_);
+  raw_message.ciaddr = htonl(client_ip_address_);
+  raw_message.yiaddr = htonl(your_ip_address_);
+  raw_message.siaddr = htonl(next_server_ip_address_);
+  raw_message.giaddr = htonl(agent_ip_address_);
+  raw_message.cookie = htonl(cookie_);
+  memcpy(raw_message.chaddr,
+         client_hardware_address_.GetConstData(),
+         hardware_address_length_);
+  if (servername_.length() >= kServerNameLength) {
+    LOG(ERROR) << "Invalid server name length: " << servername_.length();
+    return false;
+  }
+  memcpy(raw_message.sname,
+         servername_.c_str(),
+         servername_.length());
+  raw_message.sname[servername_.length()] = 0;
+  if (bootfile_.length() >= kBootFileLength) {
+    LOG(ERROR) << "Invalid boot file length: " << bootfile_.length();
+    return false;
+  }
+  memcpy(raw_message.file,
+         bootfile_.c_str(),
+         bootfile_.length());
+  raw_message.file[bootfile_.length()] = 0;
+  data->Append(ByteString(reinterpret_cast<const char*>(&raw_message),
+                          sizeof(raw_message) - kDHCPOptionLength));
+  // Append DHCP options to the message.
+  DHCPOptionsWriter* options_writer = DHCPOptionsWriter::GetInstance();
+  if (options_writer->WriteUInt8Option(data,
+                                       kDHCPOptionMessageType,
+                                       message_type_) == -1) {
+    LOG(ERROR) << "Failed to write message type option";
+    return false;
+  }
+  if (lease_time_ != 0) {
+    if (options_writer->WriteUInt32Option(data,
+                                          kDHCPOptionLeaseTime,
+                                          lease_time_) == -1) {
+      LOG(ERROR) << "Failed to write lease time option";
+      return false;
+    }
+  }
+  if (server_identifier_ != 0) {
+    if (options_writer->WriteUInt32Option(data,
+                                          kDHCPOptionServerIdentifier,
+                                          server_identifier_) == -1) {
+      LOG(ERROR) << "Failed to write server identifier option";
+      return false;
+    }
+  }
+  // TODO(nywang): Append other options.
+  // Append end tag.
+  if (options_writer->WriteEndTag(data) == -1) {
+    LOG(ERROR) << "Failed to write DHCP options end tag";
     return false;
   }
   return true;

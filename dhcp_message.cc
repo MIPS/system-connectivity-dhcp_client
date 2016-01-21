@@ -193,7 +193,8 @@ bool DHCPMessage::ContainsValidOptions(const std::set<uint8_t>& options_set) {
   if (message_type_ != kDHCPMessageTypeOffer &&
       message_type_ != kDHCPMessageTypeAck &&
       message_type_ != kDHCPMessageTypeNak) {
-    LOG(ERROR) << "Invalid DHCP Message Type: " << static_cast<int>(message_type_);
+    LOG(ERROR) << "Invalid DHCP Message Type: "
+               << static_cast<int>(message_type_);
     return false;
   }
   // A DHCP Offer message must contain option 51: IP Address Lease Time.

@@ -23,6 +23,7 @@
 #include <vector>
 
 #include <base/lazy_instance.h>
+#include <shill/net/byte_string.h>
 
 namespace dhcp_client {
 
@@ -30,32 +31,37 @@ class DHCPOptionsWriter {
  public:
   ~DHCPOptionsWriter() {}
   static DHCPOptionsWriter* GetInstance();
-  int WriteUInt8Option(uint8_t* buffer, uint8_t option_code, uint8_t value);
-  int WriteUInt16Option(uint8_t* buffer,
+  int WriteUInt8Option(shill::ByteString* buffer,
+                       uint8_t option_code,
+                       uint8_t value);
+  int WriteUInt16Option(shill::ByteString* buffer,
                         uint8_t option_code,
                         uint16_t value);
-  int WriteUInt32Option(uint8_t* buffer,
+  int WriteUInt32Option(shill::ByteString* buffer,
                         uint8_t option_code,
                         uint32_t value);
-  int WriteUInt8ListOption(uint8_t* buffer,
+  int WriteUInt8ListOption(shill::ByteString* buffer,
                            uint8_t option_code,
                            const std::vector<uint8_t>& value);
-  int WriteUInt16ListOption(uint8_t* buffer,
+  int WriteUInt16ListOption(shill::ByteString* buffer,
                             uint8_t option_code,
                             const std::vector<uint16_t>& value);
-  int WriteUInt32ListOption(uint8_t* buffer,
+  int WriteUInt32ListOption(shill::ByteString* buffer,
                             uint8_t option_code,
                             const std::vector<uint32_t>& value);
-  int WriteUInt32PairListOption(uint8_t* buffer,
+  int WriteUInt32PairListOption(shill::ByteString* buffer,
       uint8_t option_code,
       const std::vector<std::pair<uint32_t, uint32_t>>& value);
-  int WriteBoolOption(uint8_t* buffer,
+  int WriteBoolOption(shill::ByteString* buffer,
                       uint8_t option_code,
                       const bool value);
-  int WriteStringOption(uint8_t* buffer,
+  int WriteStringOption(shill::ByteString* buffer,
                         uint8_t option_code,
                         const std::string& value);
-  void WriteEndTag(uint8_t* buffer);
+  int WriteByteArrayOption(shill::ByteString* buffer,
+                           uint8_t option_code,
+                           const shill::ByteString& value);
+  int WriteEndTag(shill::ByteString* buffer);
 
  protected:
   DHCPOptionsWriter() {}

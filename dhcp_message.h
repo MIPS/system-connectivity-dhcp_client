@@ -63,7 +63,7 @@ class DHCPMessage {
   static uint32_t GenerateTransactionID();
   // Initialize part of the data fields for outbound DHCP message.
   // Serialize the message to a buffer
-  bool Serialize(shill::ByteString* data);
+  bool Serialize(shill::ByteString* data) const;
 
   // DHCP option and field setters
   void SetClientHardwareAddress(

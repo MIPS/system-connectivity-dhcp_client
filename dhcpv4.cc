@@ -19,8 +19,15 @@
 #include <linux/filter.h>
 #include <linux/if_packet.h>
 #include <net/ethernet.h>
+#include <net/if.h>
+#include <net/if_arp.h>
+#include <netinet/ip.h>
+#include <netinet/udp.h>
 
 #include <base/bind.h>
+#include <base/logging.h>
+
+#include "dhcp_client/dhcp_message.h"
 
 using base::Bind;
 using base::Unretained;
@@ -72,7 +79,9 @@ DHCPV4::DHCPV4(const std::string& interface_name,
           IOHandlerFactoryContainer::GetInstance()->GetIOHandlerFactory()),
       state_(State::INIT),
       socket_(kInvalidSocketDescriptor),
-      sockets_(new shill::Sockets()) {
+      sockets_(new shill::Sockets()),
+      from_(INADDR_ANY),
+      to_(INADDR_BROADCAST) {
 }
 
 DHCPV4::~DHCPV4() {
@@ -151,6 +160,93 @@ bool DHCPV4::CreateRawSocket() {
   }
 
   socket_ = socket_closer.Release();
+  return true;
+}
+
+bool DHCPV4::MakeRawPacket(const DHCPMessage& message, ByteString* output) {
+  ByteString payload;
+  if (!message.Serialize(&payload)) {
+    LOG(ERROR) << "Failed to serialzie dhcp message";
+    return false;
+  }
+  const size_t header_len = sizeof(struct iphdr) + sizeof(struct udphdr);
+  const size_t payload_len = payload.GetLength();
+
+  char buffer[header_len + payload_len];
+  memset(buffer, 0, header_len + payload_len);
+  struct iphdr* ip = reinterpret_cast<struct iphdr*>(buffer);
+  struct udphdr* udp = reinterpret_cast<struct udphdr*>(buffer + sizeof(*ip));
+
+  if (!payload.CopyData(payload_len, buffer + header_len)) {
+    LOG(ERROR) << "Failed to copy data from payload";
+    return false;
+  }
+  udp->uh_sport = htons(kDHCPClientPort);
+  udp->uh_dport = htons(kDHCPServerPort);
+  udp->uh_ulen =
+      htons(static_cast<uint16_t>(sizeof(*udp) + payload.GetLength()));
+
+  // Fill pseudo header (for UDP checksum computing):
+  // Protocol.
+  ip->protocol = IPPROTO_UDP;
+  // Source IP address.
+  ip->saddr = htonl(from_);
+  // Destination IP address.
+  ip->daddr = htonl(to_);
+  // Total length, use udp packet length for pseudo header.
+  ip->tot_len = udp->uh_ulen;
+  // Calculate udp checksum based on:
+  // IPV4 pseudo header, UDP header, and payload.
+  udp->uh_sum = htons(DHCPMessage::ComputeChecksum(
+      reinterpret_cast<const uint8_t*>(buffer),
+      header_len + payload_len));
+
+  // IP version.
+  ip->version = IPVERSION;
+  // IP header length.
+  ip->ihl = sizeof(*ip) >> 2;
+  // Fragment offset field.
+  // The DHCP packet is always smaller than MTU,
+  // so fragmentation is not needed.
+  ip->frag_off = 0;
+  // Identification.
+  // TODO(nywang) Use arc4 random number.
+  ip->id = static_cast<uint16_t>(rand());
+  // Time to live.
+  ip->ttl = IPDEFTTL;
+  // Total length.
+  ip->tot_len = htons(static_cast<uint16_t>(header_len+ payload.GetLength()));
+  // Calculate IP Checksum only based on IP header.
+  ip->check = htons(DHCPMessage::ComputeChecksum(
+      reinterpret_cast<const uint8_t*>(ip),
+      sizeof(*ip)));
+
+  *output = ByteString(buffer, header_len + payload_len);
+  return true;
+}
+
+bool DHCPV4::SendRawPacket(const ByteString& packet) {
+  struct sockaddr_ll remote;
+  memset(&remote, 0, sizeof(remote));
+  remote.sll_family = AF_PACKET;
+  remote.sll_protocol = htons(ETHERTYPE_IP);
+  remote.sll_ifindex = interface_index_;
+  remote.sll_hatype = htons(ARPHRD_ETHER);
+  // Use broadcast hardware address.
+  remote.sll_halen = IFHWADDRLEN;
+  memset(remote.sll_addr, 0xff, IFHWADDRLEN);
+
+  size_t result = sockets_->SendTo(socket_,
+                                   packet.GetConstData(),
+                                   packet.GetLength(),
+                                   0,
+                                   reinterpret_cast<struct sockaddr *>(&remote),
+                                   sizeof(remote));
+
+  if (result != packet.GetLength()) {
+    PLOG(ERROR) << "Socket sento failed";
+    return false;
+  }
   return true;
 }
 

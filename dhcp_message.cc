@@ -268,7 +268,7 @@ bool DHCPMessage::IsValid() {
   return true;
 }
 
-bool DHCPMessage::Serialize(ByteString* data) {
+bool DHCPMessage::Serialize(ByteString* data) const {
   RawDHCPMessage raw_message;
   raw_message.op = opcode_;
   raw_message.htype = hardware_address_type_;

@@ -21,12 +21,13 @@
 
 #include <base/macros.h>
 #include <base/strings/stringprintf.h>
+#include <shill/net/byte_string.h>
+#include <shill/net/io_handler_factory_container.h>
+#include <shill/net/sockets.h>
 
 #include "dhcp_client/dhcp.h"
+#include "dhcp_client/dhcp_message.h"
 #include "dhcp_client/event_dispatcher_interface.h"
-#include "shill/net/byte_string.h"
-#include "shill/net/io_handler_factory_container.h"
-#include "shill/net/sockets.h"
 
 namespace dhcp_client {
 
@@ -47,6 +48,12 @@ class DHCPV4 : public DHCP {
   void Stop();
 
  private:
+  bool CreateRawSocket();
+  bool MakeRawPacket(const DHCPMessage& message, shill::ByteString* buffer);
+  void OnReadError(const std::string& error_msg);
+  void ParseMessage(shill::InputData* data);
+  bool SendRawPacket(const shill::ByteString& buffer);
+
   // Interface parameters.
   std::string interface_name_;
   shill::ByteString hardware_address_;
@@ -76,9 +83,8 @@ class DHCPV4 : public DHCP {
   // Helper class with wrapped socket relavent functions.
   std::unique_ptr<shill::Sockets> sockets_;
 
-  bool CreateRawSocket();
-  void ParseMessage(shill::InputData* data);
-  void OnReadError(const std::string& error_msg);
+  uint32_t from_;
+  uint32_t to_;
 
   DISALLOW_COPY_AND_ASSIGN(DHCPV4);
 };

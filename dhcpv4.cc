@@ -43,6 +43,11 @@ const uint16_t kDHCPClientPort = 68;
 
 const int kInvalidSocketDescriptor = -1;
 
+// RFC 791: the minimum value for a correct header is 20 octets.
+// The maximum value is 60 octets.
+const size_t kIPHeaderMinLength = 20;
+const size_t kIPHeaderMaxLength = 60;
+
 // Socket filter for dhcp packet.
 const sock_filter dhcp_bpf_filter[] = {
   BPF_STMT(BPF_LD + BPF_B + BPF_ABS, 23 - ETH_HLEN),
@@ -78,18 +83,57 @@ DHCPV4::DHCPV4(const std::string& interface_name,
       io_handler_factory_(
           IOHandlerFactoryContainer::GetInstance()->GetIOHandlerFactory()),
       state_(State::INIT),
-      socket_(kInvalidSocketDescriptor),
-      sockets_(new shill::Sockets()),
       from_(INADDR_ANY),
-      to_(INADDR_BROADCAST) {
+      to_(INADDR_BROADCAST),
+      socket_(kInvalidSocketDescriptor),
+      sockets_(new shill::Sockets()) {
 }
 
 DHCPV4::~DHCPV4() {
   Stop();
 }
 
-void DHCPV4::ParseMessage(shill::InputData* data) {
-  LOG(INFO) << __func__;
+void DHCPV4::ParseRawPacket(shill::InputData* data) {
+  if (data->len < sizeof(iphdr)) {
+    LOG(ERROR) << "Invalid packet length from buffer";
+    return;
+  }
+  // The socket filter has finished part the header validation.
+  // This function will perform the remaining part.
+  int header_len = ValidatePacketHeader(data->buf, data->len);
+  if (header_len == -1) {
+    return;
+  }
+  unsigned char* buffer = data->buf + header_len;
+  DHCPMessage msg;
+  if (!DHCPMessage::InitFromBuffer(buffer, data->len - header_len, &msg)) {
+    LOG(ERROR) << "Failed to initialize DHCP message from buffer";
+    return;
+  }
+  // In INIT state the client ignores all messages from server.
+  if (state_ == State::INIT) {
+    return;
+  }
+  // Check transaction id with the existing one.
+  if (msg.transaction_id() != transaction_id_) {
+    LOG(ERROR) << "Transaction id(xid) doesn't match";
+    return;
+  }
+  uint8_t message_type = msg.message_type();
+  switch (message_type) {
+    case kDHCPMessageTypeOffer:
+      HandleOffer(msg);
+      break;
+    case kDHCPMessageTypeAck:
+      HandleAck(msg);
+      break;
+    case kDHCPMessageTypeNak:
+      HandleNak(msg);
+      break;
+    default:
+      LOG(ERROR) << "Invalid message type: "
+                 << static_cast<int>(message_type);
+  }
 }
 
 void DHCPV4::OnReadError(const std::string& error_msg) {
@@ -103,7 +147,7 @@ bool DHCPV4::Start() {
 
   input_handler_.reset(io_handler_factory_->CreateIOInputHandler(
       socket_,
-      Bind(&DHCPV4::ParseMessage, Unretained(this)),
+      Bind(&DHCPV4::ParseRawPacket, Unretained(this)),
       Bind(&DHCPV4::OnReadError, Unretained(this))));
   return true;
 }
@@ -161,6 +205,18 @@ bool DHCPV4::CreateRawSocket() {
 
   socket_ = socket_closer.Release();
   return true;
+}
+
+void DHCPV4::HandleOffer(const DHCPMessage& msg) {
+  return;
+}
+
+void DHCPV4::HandleAck(const DHCPMessage& msg) {
+  return;
+}
+
+void DHCPV4::HandleNak(const DHCPMessage& msg) {
+  return;
 }
 
 bool DHCPV4::MakeRawPacket(const DHCPMessage& message, ByteString* output) {
@@ -248,6 +304,38 @@ bool DHCPV4::SendRawPacket(const ByteString& packet) {
     return false;
   }
   return true;
+}
+
+int DHCPV4::ValidatePacketHeader(const unsigned char* buffer, size_t len) {
+  const struct iphdr* ip =
+      reinterpret_cast<const struct iphdr*>(buffer);
+  const size_t ip_header_len = static_cast<size_t>(ip->ihl) << 2;
+  if (ip_header_len < kIPHeaderMinLength ||
+      ip_header_len > kIPHeaderMaxLength) {
+    LOG(ERROR) << "Invalid Internet Header Length: "
+               << ip_header_len << " bytes";
+    return -1;
+  }
+  if (ip->tot_len != len) {
+    LOG(ERROR) << "Invalid IP total length";
+    return -1;
+  }
+  // TODO(nywang): Validate other ip header fields.
+
+  const struct udphdr* udp =
+      reinterpret_cast<const struct udphdr*>(buffer + ip_header_len);
+  if (udp->uh_sport != htons(kDHCPServerPort) ||
+      udp->uh_dport != htons(kDHCPClientPort)) {
+    LOG(ERROR) << "Invlaid UDP ports";
+    return -1;
+  }
+  if (udp->uh_ulen != len - ip_header_len) {
+    LOG(ERROR) << "Invalid UDP total length";
+    return -1;
+  }
+  // TODO(nywang): Validate UDP checksum.
+
+  return ip_header_len + sizeof(*udp);
 }
 
 }  // namespace dhcp_client

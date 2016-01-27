@@ -51,8 +51,15 @@ class DHCPV4 : public DHCP {
   bool CreateRawSocket();
   bool MakeRawPacket(const DHCPMessage& message, shill::ByteString* buffer);
   void OnReadError(const std::string& error_msg);
-  void ParseMessage(shill::InputData* data);
+  void ParseRawPacket(shill::InputData* data);
   bool SendRawPacket(const shill::ByteString& buffer);
+  // Validate the IP and UDP header and return the total headers length.
+  // Return -1 if any header is invalid.
+  int ValidatePacketHeader(const unsigned char* buffer, size_t len);
+
+  void HandleOffer(const DHCPMessage& msg);
+  void HandleAck(const DHCPMessage& msg);
+  void HandleNak(const DHCPMessage& msg);
 
   // Interface parameters.
   std::string interface_name_;
@@ -77,14 +84,15 @@ class DHCPV4 : public DHCP {
 
   // DHCP state variables.
   State state_;
+  uint32_t server_identifier_;
+  uint32_t transaction_id_;
+  uint32_t from_;
+  uint32_t to_;
 
   // Socket used for sending and receiving DHCP messages.
   int socket_;
   // Helper class with wrapped socket relavent functions.
   std::unique_ptr<shill::Sockets> sockets_;
-
-  uint32_t from_;
-  uint32_t to_;
 
   DISALLOW_COPY_AND_ASSIGN(DHCPV4);
 };

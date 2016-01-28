@@ -65,11 +65,12 @@ class DHCPMessage {
   // Serialize the message to a buffer
   bool Serialize(shill::ByteString* data);
 
-  // DHCP option and filed setters
+  // DHCP option and field setters
   void SetClientHardwareAddress(
       const shill::ByteString& client_hardware_address);
   void SetClientIdentifier(const shill::ByteString& client_identifier);
   void SetClientIPAddress(uint32_t client_ip_address);
+  void SetErrorMessage(const std::string& error_message);
   void SetLeaseTime(uint32_t lease_time);
   void SetMessageType(uint8_t message_type);
   void SetParameterRequestList(
@@ -77,7 +78,7 @@ class DHCPMessage {
   void SetServerIdentifier(uint32_t server_identifier);
   void SetTransactionID(uint32_t transaction_id);
 
-  // DHCP option and filed getters
+  // DHCP option and field getters
   const shill::ByteString& client_hardware_address() const {
     return client_hardware_address_;
   }
@@ -85,8 +86,8 @@ class DHCPMessage {
     return client_identifier_;
   }
   uint32_t client_ip_address() const { return client_ip_address_; }
-  std::string domain_name() const { return domain_name_; }
-
+  const std::string& domain_name() const { return domain_name_; }
+  const std::string& error_message() const { return error_message_; }
   uint32_t lease_time() const { return lease_time_; }
   uint8_t message_type() const { return message_type_; }
   uint32_t rebinding_time() const { return rebinding_time_; }
@@ -157,6 +158,8 @@ class DHCPMessage {
   uint32_t server_identifier_;
   // Option 55: Parameter Request List.
   std::vector<uint8_t> parameter_request_list_;
+  // Option 56: (Error) Message.
+  std::string error_message_;
   // Option 58: Renewal time value in unit of seconds.
   uint32_t renewal_time_;
   // Option 59: Rebinding time value in unit of seconds.

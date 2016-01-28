@@ -28,6 +28,7 @@ const uint8_t kDHCPOptionLeaseTime = 51;
 const uint8_t kDHCPOptionMessageType = 53;
 const uint8_t kDHCPOptionServerIdentifier = 54;
 const uint8_t kDHCPOptionParameterRequestList = 55;
+const uint8_t kDHCPOptionMessage = 56;
 const uint8_t kDHCPOptionRenewalTime = 58;
 const uint8_t kDHCPOptionRebindingTime = 59;
 const uint8_t kDHCPOptionClientIdentifier = 61;

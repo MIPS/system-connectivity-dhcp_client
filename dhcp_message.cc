@@ -76,6 +76,8 @@ DHCPMessage::DHCPMessage()
       ParserContext(new UInt8Parser(), &message_type_)));
   options_map_.insert(std::make_pair(kDHCPOptionLeaseTime,
       ParserContext(new UInt32Parser(), &lease_time_)));
+  options_map_.insert(std::make_pair(kDHCPOptionMessage,
+      ParserContext(new StringParser(), &error_message_)));
   options_map_.insert(std::make_pair(kDHCPOptionSubnetMask,
       ParserContext(new UInt32Parser(), &subnet_mask_)));
   options_map_.insert(std::make_pair(kDHCPOptionServerIdentifier,
@@ -325,6 +327,14 @@ bool DHCPMessage::Serialize(ByteString* data) {
       return false;
     }
   }
+  if (error_message_.size() != 0) {
+    if (options_writer->WriteStringOption(data,
+                                          kDHCPOptionMessage,
+                                          error_message_) == -1) {
+      LOG(ERROR) << "Failed to write error message option";
+      return false;
+    }
+  }
   if (parameter_request_list_.size() != 0) {
     if (options_writer->WriteUInt8ListOption(data,
                                              kDHCPOptionParameterRequestList,
@@ -382,6 +392,10 @@ void DHCPMessage::SetClientIPAddress(uint32_t client_ip_address) {
 void DHCPMessage::SetClientHardwareAddress(
     const ByteString& client_hardware_address) {
   client_hardware_address_ = client_hardware_address;
+}
+
+void DHCPMessage::SetErrorMessage(const std::string& error_message) {
+  error_message_ = error_message;
 }
 
 void DHCPMessage::SetLeaseTime(uint32_t lease_time) {

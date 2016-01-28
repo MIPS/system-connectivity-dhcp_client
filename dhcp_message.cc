@@ -24,6 +24,7 @@
 #include <set>
 #include <string>
 #include <utility>
+#include <vector>
 
 #include <base/logging.h>
 
@@ -113,6 +114,7 @@ bool DHCPMessage::InitFromBuffer(const unsigned char* buffer,
   message->hardware_address_length_ = raw_message->hlen;
   if (message->hardware_address_length_ > kClientHardwareAddressLength) {
     LOG(ERROR) << "Invalid hardware address length";
+    return false;
   }
   message->relay_hops_ = raw_message->hops;
   message->transaction_id_ = ntohl(raw_message->xid);
@@ -323,10 +325,23 @@ bool DHCPMessage::Serialize(ByteString* data) {
       return false;
     }
   }
+  if (parameter_request_list_.size() != 0) {
+    if (options_writer->WriteUInt8ListOption(data,
+                                             kDHCPOptionParameterRequestList,
+                                             parameter_request_list_) == -1) {
+      LOG(ERROR) << "Failed to write parameter request list";
+      return false;
+    }
+  }
   // TODO(nywang): Append other options.
   // Append end tag.
   if (options_writer->WriteEndTag(data) == -1) {
     LOG(ERROR) << "Failed to write DHCP options end tag";
+    return false;
+  }
+  // Ensure we do not exceed the maximum length.
+  if (data->GetLength() > kDHCPMessageMaxLength) {
+    LOG(ERROR) << "DHCP message length exceeds the limit";
     return false;
   }
   return true;
@@ -377,6 +392,10 @@ void DHCPMessage::SetMessageType(uint8_t message_type) {
   message_type_ = message_type;
 }
 
+void DHCPMessage::SetParameterRequestList(
+    const std::vector<uint8_t>& parameter_request_list) {
+  parameter_request_list_ = parameter_request_list;
+}
 void DHCPMessage::SetServerIdentifier(uint32_t server_identifier) {
   server_identifier_ = server_identifier;
 }

@@ -72,6 +72,8 @@ class DHCPMessage {
   void SetClientIPAddress(uint32_t client_ip_address);
   void SetLeaseTime(uint32_t lease_time);
   void SetMessageType(uint8_t message_type);
+  void SetParameterRequestList(
+      const std::vector<uint8_t>& parameter_request_list);
   void SetServerIdentifier(uint32_t server_identifier);
   void SetTransactionID(uint32_t transaction_id);
 
@@ -153,6 +155,8 @@ class DHCPMessage {
   uint8_t message_type_;
   // Option 54: Server Identifier.
   uint32_t server_identifier_;
+  // Option 55: Parameter Request List.
+  std::vector<uint8_t> parameter_request_list_;
   // Option 58: Renewal time value in unit of seconds.
   uint32_t renewal_time_;
   // Option 59: Rebinding time value in unit of seconds.

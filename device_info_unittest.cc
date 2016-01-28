@@ -92,7 +92,8 @@ TEST_F(DeviceInfoTest, GetDeviceInfoSucceed) {
                                           &interface_index));
   EXPECT_EQ(interface_index, kFakeInterfaceIndex);
   EXPECT_THAT(kFakeMacAddress,
-              ElementsAreArray(mac_address.GetData(), sizeof(kFakeMacAddress)));
+              ElementsAreArray(mac_address.GetConstData(),
+                               sizeof(kFakeMacAddress)));
 }
 
 TEST_F(DeviceInfoTest, GetDeviceInfoNameTooLong) {

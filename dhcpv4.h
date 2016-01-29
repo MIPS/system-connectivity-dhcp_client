@@ -17,6 +17,7 @@
 #ifndef DHCP_CLIENT_DHCPV4_H_
 #define DHCP_CLIENT_DHCPV4_H_
 
+#include <random>
 #include <string>
 
 #include <base/macros.h>
@@ -93,6 +94,8 @@ class DHCPV4 : public DHCP {
   int socket_;
   // Helper class with wrapped socket relavent functions.
   std::unique_ptr<shill::Sockets> sockets_;
+
+  std::default_random_engine random_engine_;
 
   DISALLOW_COPY_AND_ASSIGN(DHCPV4);
 };

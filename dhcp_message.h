@@ -60,7 +60,6 @@ class DHCPMessage {
                              DHCPMessage* message);
   static DHCPMessage InitRequest();
   static uint16_t ComputeChecksum(const uint8_t* data, size_t len);
-  static uint32_t GenerateTransactionID();
   // Initialize part of the data fields for outbound DHCP message.
   // Serialize the message to a buffer
   bool Serialize(shill::ByteString* data) const;

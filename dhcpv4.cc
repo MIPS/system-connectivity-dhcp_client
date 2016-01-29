@@ -24,6 +24,8 @@
 #include <netinet/ip.h>
 #include <netinet/udp.h>
 
+#include <random>
+
 #include <base/bind.h>
 #include <base/logging.h>
 
@@ -86,7 +88,8 @@ DHCPV4::DHCPV4(const std::string& interface_name,
       from_(INADDR_ANY),
       to_(INADDR_BROADCAST),
       socket_(kInvalidSocketDescriptor),
-      sockets_(new shill::Sockets()) {
+      sockets_(new shill::Sockets()),
+      random_engine_(time(nullptr)) {
 }
 
 DHCPV4::~DHCPV4() {
@@ -266,8 +269,9 @@ bool DHCPV4::MakeRawPacket(const DHCPMessage& message, ByteString* output) {
   // so fragmentation is not needed.
   ip->frag_off = 0;
   // Identification.
-  // TODO(nywang) Use arc4 random number.
-  ip->id = static_cast<uint16_t>(rand());
+  ip->id = static_cast<uint16_t>(
+      std::uniform_int_distribution<unsigned int>()(
+          random_engine_) % UINT16_MAX + 1);
   // Time to live.
   ip->ttl = IPDEFTTL;
   // Total length.

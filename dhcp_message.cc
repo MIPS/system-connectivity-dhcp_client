@@ -376,12 +376,6 @@ uint16_t DHCPMessage::ComputeChecksum(const uint8_t* data, size_t len) {
   return ~static_cast<uint16_t>(sum);
 }
 
-uint32_t DHCPMessage::GenerateTransactionID() {
-  // TODO(nywang): use arc4 random number for better security.
-  srand(time(NULL));
-  return rand() % UINT32_MAX;
-}
-
 void DHCPMessage::SetClientIdentifier(
     const ByteString& client_identifier) {
   client_identifier_ = client_identifier;

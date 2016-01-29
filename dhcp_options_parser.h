@@ -101,6 +101,12 @@ class StringParser : public DHCPOptionsParser {
                  void* value) override;
 };
 
+class ByteArrayParser : public DHCPOptionsParser {
+ public:
+  bool GetOption(const uint8_t* buffer,
+                 uint8_t length,
+                 void* value) override;
+};
 }  // namespace dhcp_client
 
 #endif  // DHCP_CLIENT_PARSER_H_

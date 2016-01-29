@@ -24,6 +24,9 @@
 
 #include <base/logging.h>
 #include <base/macros.h>
+#include <shill/net/byte_string.h>
+
+using shill::ByteString;
 
 namespace dhcp_client {
 
@@ -169,6 +172,19 @@ bool StringParser::GetOption(const uint8_t* buffer,
   }
   std::string* option_string = static_cast<std::string*>(value);
   option_string->assign(reinterpret_cast<const char*>(buffer), length);
+  return true;
+}
+
+bool ByteArrayParser::GetOption(const uint8_t* buffer,
+                                uint8_t length,
+                                void* value) {
+  if (length == 0) {
+    LOG(ERROR) << "Invalid option length field";
+    return false;
+  }
+  ByteString* byte_array =
+      static_cast<ByteString*>(value);
+  *byte_array = ByteString(buffer, length);
   return true;
 }
 

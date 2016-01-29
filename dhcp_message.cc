@@ -92,6 +92,8 @@ DHCPMessage::DHCPMessage()
       ParserContext(new UInt32ListParser(), &router_)));
   options_map_.insert(std::make_pair(kDHCPOptionDomainName,
       ParserContext(new StringParser(), &domain_name_)));
+  options_map_.insert(std::make_pair(kDHCPOptionVendorSpecificInformation,
+      ParserContext(new ByteArrayParser(), &vendor_specific_info_)));
 }
 
 DHCPMessage::~DHCPMessage() {}
@@ -410,12 +412,18 @@ void DHCPMessage::SetParameterRequestList(
     const std::vector<uint8_t>& parameter_request_list) {
   parameter_request_list_ = parameter_request_list;
 }
+
 void DHCPMessage::SetServerIdentifier(uint32_t server_identifier) {
   server_identifier_ = server_identifier;
 }
 
 void DHCPMessage::SetTransactionID(uint32_t transaction_id) {
   transaction_id_ = transaction_id;
+}
+
+void DHCPMessage::SetVendorSpecificInfo(
+    const shill::ByteString& vendor_specific_info) {
+  vendor_specific_info_ = vendor_specific_info;
 }
 
 DHCPMessage DHCPMessage::InitRequest() {

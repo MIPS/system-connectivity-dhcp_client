@@ -24,6 +24,9 @@
 #include <vector>
 
 #include <gtest/gtest.h>
+#include <shill/net/byte_string.h>
+
+using shill::ByteString;
 
 namespace {
 const uint8_t kFakeUInt8Option[] = {0x02};
@@ -55,6 +58,9 @@ const uint8_t kFakeUInt32PairListOptionLength = 16;
 const unsigned char kFakeStringOption[] =
     {'f', 'a', 'k', 'e', 's', 't', 'r', 'i', 'n', 'g'};
 const uint8_t kFakeStringOptionLength = 10;
+
+const unsigned char kFakeByteArrayOption[] =
+    {'f', 'a', 'k', 'e', 'b', 'y', 't', 'e', 'a', 'r', 'r', 'a', 'y'};
 
 const uint8_t kFakeBoolOptionEnable[] = {0x01};
 const uint8_t kFakeBoolOptionDisable[] = {0x00};
@@ -201,6 +207,17 @@ TEST_F(ParserTest, ParseString) {
                                  kFakeStringOptionLength,
                                  &value));
   EXPECT_EQ(target_value, value);
+}
+
+TEST_F(ParserTest, ParseByteArray) {
+  parser_.reset(new ByteArrayParser());
+  ByteString value;
+  ByteString target_value(reinterpret_cast<const char*>(kFakeByteArrayOption),
+                          sizeof(kFakeByteArrayOption));
+  EXPECT_TRUE(parser_->GetOption(kFakeByteArrayOption,
+                                 sizeof(kFakeByteArrayOption),
+                                 &value));
+  EXPECT_TRUE(target_value.Equals(value));
 }
 
 }  // namespace dhcp_client

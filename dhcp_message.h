@@ -77,6 +77,7 @@ class DHCPMessage {
       const std::vector<uint8_t>& parameter_request_list);
   void SetServerIdentifier(uint32_t server_identifier);
   void SetTransactionID(uint32_t transaction_id);
+  void SetVendorSpecificInfo(const shill::ByteString& vendor_specific_info);
 
   // DHCP option and field getters
   const shill::ByteString& client_hardware_address() const {
@@ -86,6 +87,7 @@ class DHCPMessage {
     return client_identifier_;
   }
   uint32_t client_ip_address() const { return client_ip_address_; }
+  const std::vector<uint32_t>& dns_server() const { return dns_server_; }
   const std::string& domain_name() const { return domain_name_; }
   const std::string& error_message() const { return error_message_; }
   uint32_t lease_time() const { return lease_time_; }
@@ -96,8 +98,10 @@ class DHCPMessage {
   uint32_t server_identifier() const { return server_identifier_; }
   uint32_t subnet_mask() const { return subnet_mask_; }
   uint32_t transaction_id() const { return transaction_id_; }
+  const shill::ByteString& vendor_specific_info() const {
+    return vendor_specific_info_;
+  }
   uint32_t your_ip_address() const { return your_ip_address_; }
-  const std::vector<uint32_t>& dns_server() const { return dns_server_; }
 
  private:
   bool ParseDHCPOptions(const uint8_t* options, size_t options_length);
@@ -150,6 +154,8 @@ class DHCPMessage {
   std::vector<uint32_t> dns_server_;
   // Option 15: Domain Name.
   std::string domain_name_;
+  // Option 43: Vendor Specific Information.
+  shill::ByteString vendor_specific_info_;
   // Option 51: IP address lease time in unit of seconds.
   uint32_t lease_time_;
   // Option 53: DHCP message type.

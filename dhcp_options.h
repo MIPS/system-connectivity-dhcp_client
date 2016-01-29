@@ -24,6 +24,7 @@ const uint8_t kDHCPOptionSubnetMask = 1;
 const uint8_t kDHCPOptionRouter = 3;
 const uint8_t kDHCPOptionDNSServer = 6;
 const uint8_t kDHCPOptionDomainName = 15;
+const uint8_t kDHCPOptionVendorSpecificInformation = 43;
 const uint8_t kDHCPOptionLeaseTime = 51;
 const uint8_t kDHCPOptionMessageType = 53;
 const uint8_t kDHCPOptionServerIdentifier = 54;

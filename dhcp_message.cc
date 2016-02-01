@@ -67,7 +67,8 @@ struct __attribute__((__packed__)) RawDHCPMessage {
 }  // namespace
 
 DHCPMessage::DHCPMessage()
-    : lease_time_(0),
+    : requested_ip_address_(0),
+      lease_time_(0),
       message_type_(0),
       server_identifier_(0),
       renewal_time_(0),
@@ -313,6 +314,14 @@ bool DHCPMessage::Serialize(ByteString* data) const {
     LOG(ERROR) << "Failed to write message type option";
     return false;
   }
+  if (requested_ip_address_ != 0) {
+    if (options_writer->WriteUInt32Option(data,
+                                          kDHCPOptionRequestedIPAddr,
+                                          requested_ip_address_) == -1) {
+      LOG(ERROR) << "Failed to write requested ip address option";
+      return false;
+    }
+  }
   if (lease_time_ != 0) {
     if (options_writer->WriteUInt32Option(data,
                                           kDHCPOptionLeaseTime,
@@ -405,6 +414,10 @@ void DHCPMessage::SetMessageType(uint8_t message_type) {
 void DHCPMessage::SetParameterRequestList(
     const std::vector<uint8_t>& parameter_request_list) {
   parameter_request_list_ = parameter_request_list;
+}
+
+void DHCPMessage::SetRequestedIpAddress(uint32_t requested_ip_address) {
+  requested_ip_address_ = requested_ip_address;
 }
 
 void DHCPMessage::SetServerIdentifier(uint32_t server_identifier) {

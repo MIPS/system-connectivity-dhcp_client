@@ -74,6 +74,7 @@ class DHCPMessage {
   void SetMessageType(uint8_t message_type);
   void SetParameterRequestList(
       const std::vector<uint8_t>& parameter_request_list);
+  void SetRequestedIpAddress(uint32_t requested_ip_address);
   void SetServerIdentifier(uint32_t server_identifier);
   void SetTransactionID(uint32_t transaction_id);
   void SetVendorSpecificInfo(const shill::ByteString& vendor_specific_info);
@@ -155,6 +156,8 @@ class DHCPMessage {
   std::string domain_name_;
   // Option 43: Vendor Specific Information.
   shill::ByteString vendor_specific_info_;
+  // Option 50: Requested IP Address.
+  uint32_t requested_ip_address_;
   // Option 51: IP address lease time in unit of seconds.
   uint32_t lease_time_;
   // Option 53: DHCP message type.

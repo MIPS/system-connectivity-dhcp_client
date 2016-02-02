@@ -433,26 +433,24 @@ void DHCPMessage::SetVendorSpecificInfo(
   vendor_specific_info_ = vendor_specific_info;
 }
 
-DHCPMessage DHCPMessage::InitRequest() {
-  DHCPMessage msg;
-  msg.opcode_ = kDHCPMessageBootRequest;
-  msg.hardware_address_type_ = ARPHRD_ETHER;
-  msg.hardware_address_length_ = IFHWADDRLEN;
-  msg.relay_hops_ = 0;
+void DHCPMessage::InitRequest(DHCPMessage* message) {
+  message->opcode_ = kDHCPMessageBootRequest;
+  message->hardware_address_type_ = ARPHRD_ETHER;
+  message->hardware_address_length_ = IFHWADDRLEN;
+  message->relay_hops_ = 0;
   // Seconds since DHCP process started.
   // 0 is also valid according to RFC 2131.
-  msg.seconds_ = 0;
+  message->seconds_ = 0;
   // Only firewire (IEEE 1394) and InfiniBand interfaces
   // require broadcast flag.
-  msg.flags_ =  0;
+  message->flags_ =  0;
   // Should be zero in client's messages.
-  msg.your_ip_address_ = 0;
+  message->your_ip_address_ = 0;
   // Should be zero in client's messages.
-  msg.next_server_ip_address_ = 0;
+  message->next_server_ip_address_ = 0;
   // Should be zero in client's messages.
-  msg.agent_ip_address_ = 0;
-  msg.cookie_ = kMagicCookie;
-  return msg;
+  message->agent_ip_address_ = 0;
+  message->cookie_ = kMagicCookie;
 }
 
 }  // namespace dhcp_client

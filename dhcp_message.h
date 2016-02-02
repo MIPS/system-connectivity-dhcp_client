@@ -58,7 +58,7 @@ class DHCPMessage {
   static bool InitFromBuffer(const unsigned char* buffer,
                              size_t length,
                              DHCPMessage* message);
-  static DHCPMessage InitRequest();
+  static void InitRequest(DHCPMessage* message);
   static uint16_t ComputeChecksum(const uint8_t* data, size_t len);
   // Initialize part of the data fields for outbound DHCP message.
   // Serialize the message to a buffer
